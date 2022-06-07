@@ -1,4 +1,4 @@
-import { track, trigger } from "./";
+import { readonly, track, trigger } from "./";
 
 export const ITERATR_KEY = Symbol("iterate");
 
@@ -10,29 +10,45 @@ export function shallowReactive(target) {
   return createReactive(target, true);
 }
 
-export function createReactive(target: object, isShallow = false) {
+export function createReactive(
+  target: object,
+  isShallow = false,
+  isReadonly = false
+) {
   const obj = new Proxy(target, {
     get(target, key, receiver) {
       if (key === "raw") {
         return target;
       }
+      // 非只读时才建立响应关系
+      if (!isReadonly) {
+        track(target, key);
+      }
       const res = Reflect.get(target, key, receiver);
-      track(target, key);
+
       // 如果是使用shallowReactive第一层就直接返回res
       if (isShallow) {
         return res;
       }
       // 如果是使用reactive代理的就递归代理深层对象
       if (typeof res === "object" && res !== null) {
-        return reactive(res);
+        return isReadonly ? readonly(res) : reactive(res);
       }
       return res;
     },
     set(target, key, value, receiver) {
+      if (isReadonly) {
+        console.warn(`${key.toString()} 是只读的`);
+        return true;
+      }
       // 旧值
       const oldValue = target[key];
       // 如果属性不存在，则说明是添加新属性，否则是设置已有属性
-      const type = Object.prototype.hasOwnProperty.call(target, key)
+      const type = Array.isArray(target)
+        ? Number(key) < target.length
+          ? "SET"
+          : "ADD"
+        : Object.prototype.hasOwnProperty.call(target, key)
         ? "SET"
         : "ADD";
       // 当对象新增属性时，触发响应函数
@@ -41,7 +57,7 @@ export function createReactive(target: object, isShallow = false) {
       if (target === receiver.raw) {
         // 只有当值真正发生变化时才触发副作用函数,并且都不是NaN的情况下才触发
         if (oldValue !== value && (oldValue === oldValue || value === value)) {
-          trigger(target, key, type);
+          trigger(target, key, type, value);
         }
       }
 
@@ -49,6 +65,11 @@ export function createReactive(target: object, isShallow = false) {
     },
     // 代理对象的delete方法
     deleteProperty(target, key) {
+      // 如果是只读的，就警告
+      if (isReadonly) {
+        console.warn(`${key.toString()} 是只读的`);
+        return true;
+      }
       // 检查备操作属性是否是对象自己的属性
       const hadKey = Object.prototype.hasOwnProperty.call(target, key);
       const res = Reflect.deleteProperty(target, key);
@@ -64,7 +85,7 @@ export function createReactive(target: object, isShallow = false) {
     },
     // 拦截for...in循环
     ownKeys(target) {
-      track(target, ITERATR_KEY);
+      track(target, Array.isArray(target) ? "length" : ITERATR_KEY);
       return Reflect.ownKeys(target);
     },
   });

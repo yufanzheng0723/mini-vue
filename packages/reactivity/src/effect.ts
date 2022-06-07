@@ -66,7 +66,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps);
 }
 
-export function trigger(target, key, type?: any) {
+export function trigger(target, key, type?: any, newValue?: any) {
   // 根据target从桶中取到depsMap， key对应着副作用函数
   const depsMap = bucket.get(target);
   if (!depsMap) return;
@@ -91,6 +91,30 @@ export function trigger(target, key, type?: any) {
           run.add(fn);
         }
       });
+  }
+
+  if (type === "ADD" && Array.isArray(target)) {
+    // 取出与 length 相关联的副作用函数添加到运行队列中
+    const lengthEffects = depsMap.get("length");
+    lengthEffects &&
+      lengthEffects.forEach((fn) => {
+        if (fn !== activeEffect) {
+          run.add(fn);
+        }
+      });
+  }
+
+  // 如果操作目标为数组，并且修改了数组的length属性
+  if (Array.isArray(target) && key === "length") {
+    depsMap.forEach((effects, key) => {
+      if (key >= newValue) {
+        effects.forEach((fn) => {
+          if (fn !== activeEffect) {
+            run.add(fn);
+          }
+        });
+      }
+    });
   }
 
   run.forEach((fn: any) => {
