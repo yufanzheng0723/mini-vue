@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { reactive, effect } from "../src";
+import { reactive, effect, shallowReactive } from "../src";
 
 describe("reactive", () => {
   it("测试reactive", () => {
-    const obj = reactive({ bar: 1});
+    const obj = reactive({ bar: { foo: 1 } });
+    const obj2 = shallowReactive({ bar: { foo: 1 } });
+
+    let o = 0;
     effect(() => {
-      console.log(obj.bar);
+      o = obj.bar.foo;
     });
-    obj.bar = 2;
+    obj.bar.foo++;
+
+    expect(o).toBe(2);
   });
 });

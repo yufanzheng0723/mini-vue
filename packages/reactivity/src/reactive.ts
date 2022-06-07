@@ -3,7 +3,7 @@ import { track, trigger } from "./";
 export const ITERATR_KEY = Symbol("iterate");
 
 export function reactive(target) {
-  return createReactive(target);
+  return createReactive(target, false);
 }
 // 只代理第一层
 export function shallowReactive(target) {
@@ -13,18 +13,18 @@ export function shallowReactive(target) {
 export function createReactive(target: object, isShallow = false) {
   const obj = new Proxy(target, {
     get(target, key, receiver) {
-      track(target, key);
       if (key === "raw") {
         return target;
       }
       const res = Reflect.get(target, key, receiver);
+      track(target, key);
       // 如果是使用shallowReactive第一层就直接返回res
       if (isShallow) {
         return res;
       }
       // 如果是使用reactive代理的就递归代理深层对象
       if (typeof res === "object" && res !== null) {
-        reactive(res);
+        return reactive(res);
       }
       return res;
     },
