@@ -1,3 +1,4 @@
+import { ITERATR_KEY } from "./";
 // 储存副作用函数
 let activeEffect;
 
@@ -65,12 +66,13 @@ export function track(target, key) {
   activeEffect.deps.push(deps);
 }
 
-export function trigger(target, key) {
+export function trigger(target, key, type?: any) {
   // 根据target从桶中取到depsMap， key对应着副作用函数
   const depsMap = bucket.get(target);
   if (!depsMap) return;
   // 根据key取出所有副作用函数
   const effects = depsMap.get(key);
+
   const run = new Set();
   effects &&
     effects.forEach((fn) => {
@@ -79,6 +81,18 @@ export function trigger(target, key) {
         run.add(fn);
       }
     });
+  // 只有添加属性或者删除才触发
+  if (type === "ADD" || type === "DELETE") {
+    // 取得与 ITERATR_KEY 相关联的副作用函数添加到运行队列中
+    const iterateEffects = depsMap.get(ITERATR_KEY);
+    iterateEffects &&
+      iterateEffects.forEach((fn) => {
+        if (fn !== activeEffect) {
+          run.add(fn);
+        }
+      });
+  }
+
   run.forEach((fn: any) => {
     // 如果存在调度器，则调用调度器
     if (fn.options.scheduler) {

@@ -3,18 +3,10 @@ import { reactive, effect } from "../src";
 
 describe("reactive", () => {
   it("测试reactive", () => {
-    let obj: any = reactive({
-      a: 1,
-    });
-    let b;
+    const obj = reactive({ bar: 1});
     effect(() => {
-      b = obj.a;
+      console.log(obj.bar);
     });
-    expect(b).toBe(1);
-    obj.a = 2;
-    expect(b).toBe(2);
-    obj.a = 222222;
-    expect(b).toBe(222222);
-    
+    obj.bar = 2;
   });
 });
