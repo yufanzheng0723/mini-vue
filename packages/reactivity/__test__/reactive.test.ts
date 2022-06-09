@@ -14,4 +14,13 @@ describe("reactive", () => {
 
     expect(o).toBe(2);
   });
+  it("测试set与map", () => {
+    const s = reactive(new Set([1, 2, 3]));
+    effect(() => {
+      console.log(s.size);
+    });
+    s.delete(1);
+    s.delete(6);
+    s.add(4);
+  });
 });

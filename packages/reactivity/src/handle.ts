@@ -30,15 +30,16 @@ export let shouldTrack = true;
 });
 
 export function createReactive(
-  target: object,
+  obj: object,
   isShallow = false,
   isReadonly = false
 ) {
-  const obj = new Proxy(target, {
+  return new Proxy(obj, {
     get(target, key, receiver) {
       if (key === "raw") {
         return target;
       }
+
       // 如果操作对象是数组并且key存在于arrayInstrumentations中，则执行相应的方法
       // 返回的是定义在arrayInstrumentations上的值
       if (Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
@@ -113,5 +114,48 @@ export function createReactive(
       return Reflect.ownKeys(target);
     },
   });
-  return obj;
+}
+
+const mutableInstrumentations = {
+  add(key) {
+    // 通过this代理对象上的raw属性获取原始数据对象
+    const target = this.raw;
+    // 先判断是否已经存在
+    const hadKey = target.has(key);
+    // 通过原始数据对象执行add方法
+    const res = target.add(key);
+    if (!hadKey) {
+      // 触发响应
+      trigger(target, key, "ADD");
+    }
+    return res;
+  },
+  delete(key) {
+    const target = this.raw;
+    const hadKey = target.has(key);
+    const res = target.delete(key);
+    // 当元素存在时才触发响应
+    if (hadKey) {
+      trigger(target, key, "DELETE");
+    }
+    return res;
+  },
+};
+
+export function createReactiveSetOrMap(
+  obj,
+  isShallow = false,
+  isReadonly = false
+) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      if (key === "raw") return target;
+      if (key === "size") {
+        track(target, ITERATR_KEY);
+        return Reflect.get(target, key, target);
+      }
+      // 返回重写的方法
+      return mutableInstrumentations[key];
+    },
+  });
 }

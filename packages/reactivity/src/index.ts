@@ -3,4 +3,4 @@ export { reactive, ITERATR_KEY, shallowReactive } from "./reactive";
 export { computed } from "./computed";
 export { watch } from "./watch";
 export { readonly, shallowReadonly } from "./readonly";
-export { createReactive, shouldTrack } from "./handle";
+export { createReactive, shouldTrack, createReactiveSetOrMap } from "./handle";
