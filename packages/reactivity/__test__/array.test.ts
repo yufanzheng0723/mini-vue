@@ -8,14 +8,9 @@ describe("array", () => {
     arr[0] = "foo";
     expect(arr[0]).toBe("foo");
   });
-  it("测试foin", () => {
-    const arr = reactive([1]);
-    effect(() => {
-      for (const i in arr) {
-        console.log(i);
-      }
-    });
-    arr[1] = 2
-    arr.length = 0
+  it("测试includes", () => {
+    const obj = {};
+    const arr = reactive([obj]);
+    expect(arr.includes(obj)).toBe(true);
   });
 });
