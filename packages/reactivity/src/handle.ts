@@ -2,18 +2,20 @@ import { readonly, track, trigger } from "./";
 import { reactive } from "./";
 import { ITERATR_KEY } from "./";
 
-const originMethod = Array.prototype.includes;
-const arrayInstrumentations = {
-  includes: function (...args) {
-    // this是代理对象，先在代理对象中查找，将结果储存在res中
+const arrayInstrumentations = {};
+
+["includes", "indexOf", "lastIndexOf"].forEach((method) => {
+  const originMethod = Array.prototype[method];
+  arrayInstrumentations[method] = function (...args) {
+    // this是代理对象，先在代理对象中查找，储存结果在res中
     let res = originMethod.apply(this, args);
-    if (res === false) {
+    if (res === false || res === -1) {
       // 如果没有的话就通过this.raw拿到原始数组，再去其中查找并更新res的值
       res = originMethod.apply(this.raw, args);
     }
     return res;
-  },
-};
+  };
+});
 
 export function createReactive(
   target: object,

@@ -13,4 +13,9 @@ describe("array", () => {
     const arr = reactive([obj]);
     expect(arr.includes(obj)).toBe(true);
   });
+  it("测试indexOf", () => {
+    const obj = {};
+    const arr = reactive([obj]);
+    expect(arr.indexOf(obj)).toBe(0);
+  });
 });
