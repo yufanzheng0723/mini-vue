@@ -1,4 +1,4 @@
-import { ITERATR_KEY } from "./";
+import { ITERATR_KEY, shouldTrack } from "./";
 // 储存副作用函数
 let activeEffect;
 
@@ -46,7 +46,7 @@ function cleanup(effectFn) {
 
 let bucket = new WeakMap();
 export function track(target, key) {
-  if (!activeEffect) return;
+  if (!activeEffect || !shouldTrack) return;
   // 根据target从桶中取到depsMap
   let depsMap = bucket.get(target);
   // 如果不存在，就创建一个Map并与target关联

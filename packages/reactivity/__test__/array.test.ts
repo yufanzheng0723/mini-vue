@@ -18,4 +18,13 @@ describe("array", () => {
     const arr = reactive([obj]);
     expect(arr.indexOf(obj)).toBe(0);
   });
+  it("测试push", () => {
+    const a = reactive([]);
+    effect(() => {
+      a.push(1);
+    });
+    effect(() => {
+      a.push(2);
+    });
+  });
 });

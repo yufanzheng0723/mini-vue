@@ -16,6 +16,18 @@ const arrayInstrumentations = {};
     return res;
   };
 });
+// 标记是否可以追踪
+export let shouldTrack = true;
+["push", "pop", "shift", "unshift", "splice"].forEach((method) => {
+  const originMethod = Array.prototype[method];
+  arrayInstrumentations[method] = function (...args) {
+    shouldTrack = false;
+    // push 方法的默认行为
+    let res = originMethod.apply(this, args);
+    shouldTrack = true;
+    return res;
+  };
+});
 
 export function createReactive(
   target: object,
