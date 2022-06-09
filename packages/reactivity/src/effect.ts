@@ -1,4 +1,4 @@
-import { ITERATR_KEY, shouldTrack } from "./";
+import { ITERATR_KEY, shouldTrack, MAP_KEY_ITERATE_KEY } from "./";
 // 储存副作用函数
 let activeEffect;
 
@@ -45,6 +45,7 @@ function cleanup(effectFn) {
 }
 
 let bucket = new WeakMap();
+// 追踪依赖
 export function track(target, key) {
   if (!activeEffect || !shouldTrack) return;
   // 根据target从桶中取到depsMap
@@ -65,7 +66,7 @@ export function track(target, key) {
   // deps就是一个与当前副作用函数存在联系的依赖集合
   activeEffect.deps.push(deps);
 }
-
+// 触发依赖
 export function trigger(target, key, type?: any, newValue?: any) {
   // 根据target从桶中取到depsMap， key对应着副作用函数
   const depsMap = bucket.get(target);
@@ -82,11 +83,24 @@ export function trigger(target, key, type?: any, newValue?: any) {
       }
     });
   // 只有添加属性或者删除才触发
-  if (type === "ADD" || type === "DELETE") {
+  if (
+    type === "ADD" ||
+    type === "DELETE" ||
+    (type === "SET" &&
+      Object.prototype.toString.call(target) === "[object Map]")
+  ) {
     // 取得与 ITERATR_KEY 相关联的副作用函数添加到运行队列中
     const iterateEffects = depsMap.get(ITERATR_KEY);
+
     iterateEffects &&
       iterateEffects.forEach((fn) => {
+        if (fn !== activeEffect) {
+          run.add(fn);
+        }
+      });
+    const mapKeyIterateEffects = depsMap.get(MAP_KEY_ITERATE_KEY);
+    mapKeyIterateEffects &&
+      mapKeyIterateEffects.forEach((fn) => {
         if (fn !== activeEffect) {
           run.add(fn);
         }

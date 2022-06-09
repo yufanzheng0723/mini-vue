@@ -1,12 +1,12 @@
 import { createReactive, createReactiveSetOrMap } from "./";
-export const ITERATR_KEY = Symbol("iterate");
+export const ITERATR_KEY = Symbol();
 
 const reactiveMap = new Map();
 export function reactive(target) {
-  const isSetOrMap = getTargetType(target) === 1 ? 1 : 0;
+  const isSetOrMap = getTargetType(target);
   if (isSetOrMap === 1) {
     return createReactiveObject(target);
-  } else {
+  } else if (isSetOrMap === 2) {
     // return createReactiveObject(target);
     return createReactiveSetOrMap(target);
   }
@@ -15,7 +15,7 @@ export function reactive(target) {
 export function shallowReactive(target) {
   return createReactive(target, true);
 }
-
+// 对象的reactive代理
 function createReactiveObject(target) {
   // 优先通过原始对象寻找之前创建的代理对象，如果找到了就直接返回已有的代理对象
   const existionProxy = reactiveMap.get(target);
@@ -26,6 +26,7 @@ function createReactiveObject(target) {
   return proxy;
 }
 
+// 获取目标类型
 function getTargetType(target) {
   return setTargetType(target);
 }

@@ -2,6 +2,10 @@ import { readonly, track, trigger } from "./";
 import { reactive } from "./";
 import { ITERATR_KEY } from "./";
 
+// 单独作为 map.keys() 追踪依赖时的键
+export const MAP_KEY_ITERATE_KEY = Symbol();
+
+// 数组的代理对象
 const arrayInstrumentations = {};
 
 ["includes", "indexOf", "lastIndexOf"].forEach((method) => {
@@ -115,7 +119,7 @@ export function createReactive(
     },
   });
 }
-
+// 处理set和map
 const mutableInstrumentations = {
   add(key) {
     // 通过this代理对象上的raw属性获取原始数据对象
@@ -140,6 +144,51 @@ const mutableInstrumentations = {
     }
     return res;
   },
+  get(key) {
+    const target = this.raw;
+    const had = target.has(key);
+    track(target, key);
+    // 如果存在就返回结果，如果得到的结果是可代理的数据，就返回用reactive代理的数据
+    if (had) {
+      const res = target.get(key);
+      return typeof res === "object" ? reactive(res) : res;
+    }
+  },
+  set(key, value) {
+    const target = this.raw;
+
+    const had = target.has(key);
+    // 旧值
+    const oldValue = target.get(key);
+    // 获取原始数据，如果value.raw不存在，则直接使用value
+    const rawValue = value.raw || value;
+    // 设置新值
+    target.set(key, rawValue);
+    if (!had) {
+      trigger(target, key, "ADD");
+    } else if (
+      oldValue !== value ||
+      (oldValue === oldValue && value === value)
+    ) {
+      // 如果不存在，并且值变了，就是set类型操作，意味着修改了值
+      trigger(target, key, "SET");
+    }
+  },
+  forEach(callback, thisArg) {
+    // 转换成响应式数据
+    const wrap = (val) => (typeof val === "object" ? reactive(val) : val);
+    // 获取原始对象
+    const target = this.raw;
+    track(target, ITERATR_KEY);
+    // 调用方法，并且转换成响应式数据
+    target.forEach((v, k) => {
+      callback.call(thisArg, wrap(v), wrap(k), this);
+    });
+  },
+  [Symbol.iterator]: iterationMethod,
+  entries: iterationMethod,
+  values: valuesIterationMethod,
+  keys: keysIterationMethod,
 };
 
 export function createReactiveSetOrMap(
@@ -158,4 +207,66 @@ export function createReactiveSetOrMap(
       return mutableInstrumentations[key];
     },
   });
+}
+// 迭代方法
+function iterationMethod() {
+  const target = this.raw;
+  const itr = target[Symbol.iterator]();
+  const wrap = (val) => (typeof val === "object" ? reactive(val) : val);
+  track(target, ITERATR_KEY);
+  return {
+    next() {
+      //  调用原始对象的迭代器获取value 和 done
+      const { value, done } = itr.next();
+      return {
+        // 如果value不是空的就转换成响应式数据
+        value: value ? [wrap(value[0]), wrap(value[1])] : value,
+        done,
+      };
+    },
+    // 实现可迭代协议
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+}
+
+function valuesIterationMethod() {
+  const target = this.raw;
+  const itr = target.values();
+  const wrap = (val) => (typeof val === "object" ? reactive(val) : val);
+  track(target, ITERATR_KEY);
+  return {
+    next() {
+      const { value, done } = itr.next();
+      return {
+        value: wrap(value),
+        done,
+      };
+    },
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+}
+
+function keysIterationMethod() {
+  const target = this.raw;
+  const itr = target.keys();
+  const wrap = (val) => (typeof val === "object" ? reactive(val) : val);
+  // 副作用函数与MAP_KEY_ITERATE_KEY建立响应关系
+  track(target, MAP_KEY_ITERATE_KEY);
+
+  return {
+    next() {
+      const { value, done } = itr.next();
+      return {
+        value: wrap(value),
+        done,
+      };
+    },
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
 }
