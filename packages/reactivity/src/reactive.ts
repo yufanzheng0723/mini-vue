@@ -21,7 +21,7 @@ export function createReactive(
         return target;
       }
       // 非只读时才建立响应关系
-      if (!isReadonly) {
+      if (!isReadonly && typeof key !== "symbol") {
         track(target, key);
       }
       const res = Reflect.get(target, key, receiver);
