@@ -4,12 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest packages/"
+    "test": "vitest packages/",
+    "dev": "node scripts/dev.js reactivity -f global"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "vitest": "^0.14.1"
+  },
+  "dependencies": {
+    "esbuild": "^0.14.43",
+    "minimist": "^1.2.6",
+    "typescript": "^4.7.3"
   }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "@mini-vue/render",
+  "version": "1.0.0",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "render",
+    "formats": [
+      "global",
+      "cjs",
+      "esm-bundler"
+    ]
+  }
+}
