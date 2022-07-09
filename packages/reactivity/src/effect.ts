@@ -1,5 +1,5 @@
 let activeEffect = undefined
-class ReactiveEffct {
+export class ReactiveEffct {
   // 默认effect是激活状态
   public active = true
   public parent = null
@@ -55,12 +55,18 @@ export function track(target, type, key) {
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
-  // 检测是否存在这个副作用函数，如果不存在就添加进去
-  let shouldTrack = !dep.has(activeEffect)
-  if (shouldTrack) {
-    dep.add(activeEffect)
-    // 让 effect 记录住对应的依赖
-    activeEffect.deps.push(dep)
+  trackEffects(dep)
+}
+
+export function trackEffects(dep) {
+  if (activeEffect) {
+    // 检测是否存在这个副作用函数，如果不存在就添加进去
+    let shouldTrack = !dep.has(activeEffect)
+    if (shouldTrack) {
+      dep.add(activeEffect)
+      // 让 effect 记录住对应的依赖
+      activeEffect.deps.push(dep)
+    }
   }
 }
 
@@ -72,20 +78,23 @@ export function trigger(target, type, key, newValue, oldValue) {
   // 找到对应的 effect 并执行
   let effects = depsMap.get(key)
   if (effects) {
-    effects = new Set(effects)
-    effects.forEach((effect) => {
-      if (effect !== activeEffect) {
-        // 如果存在调度器就只执行调度器
-        if (effect.scheduler) {
-          effect.scheduler()
-        } else {
-          effect.run()
-        }
-      }
-    })
+    triggerEffect(effects)
   }
 }
 
+export function triggerEffect(effects) {
+  effects = new Set(effects)
+  effects.forEach((effect) => {
+    if (effect !== activeEffect) {
+      // 如果存在调度器就只执行调度器
+      if (effect.scheduler) {
+        effect.scheduler()
+      } else {
+        effect.run()
+      }
+    }
+  })
+}
 // 清理之前的副作用函数
 function cleanupEffect(effect) {
   const { deps } = effect
