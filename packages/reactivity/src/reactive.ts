@@ -1,47 +1,26 @@
-import { createReactive, createReactiveSetOrMap } from "./";
-export const ITERATR_KEY = Symbol();
+import { isObject } from "@mini-vue/shared"
+import { mutableHandle, ReactiveFlags } from "."
 
-const reactiveMap = new Map();
-export function reactive(target) {
-  const isSetOrMap = getTargetType(target);
-  if (isSetOrMap === 1) {
-    return createReactiveObject(target);
-  } else if (isSetOrMap === 2) {
-    // return createReactiveObject(target);
-    return createReactiveSetOrMap(target);
+const reactiveMap = new WeakMap()
+
+export function reactive(obj) {
+  if (!isObject(obj)) {
+    return
   }
-}
-// 只代理第一层
-export function shallowReactive(target) {
-  return createReactive(target, true);
-}
-// 对象的reactive代理
-function createReactiveObject(target) {
-  // 优先通过原始对象寻找之前创建的代理对象，如果找到了就直接返回已有的代理对象
-  const existionProxy = reactiveMap.get(target);
-  if (existionProxy) return existionProxy;
 
-  const proxy = createReactive(target, false);
-  reactiveMap.set(target, proxy);
-  return proxy;
-}
-
-// 获取目标类型
-function getTargetType(target) {
-  return setTargetType(target);
-}
-function setTargetType(target) {
-  const type = Object.prototype.toString.call(target).slice(8, -1);
-  switch (type) {
-    case "Object":
-    case "Array":
-      return 1;
-    case "Map":
-    case "Set":
-    case "WeakMap":
-    case "WeakSet":
-      return 2;
-    default:
-      return 0;
+  // 是否为proxy对象，访问对象的get方法
+  if (obj[ReactiveFlags.IS_REACTIVE]) {
+    return obj
   }
+
+  // 如果已经缓存过了，就直接返回缓存的对象
+  const exisitingProxy = reactiveMap.get(obj)
+  if (exisitingProxy) {
+    return exisitingProxy
+  }
+
+  const proxy = new Proxy(obj, mutableHandle)
+  // 缓存proxy，防止重复代理
+  reactiveMap.set(obj, proxy)
+  return proxy
 }

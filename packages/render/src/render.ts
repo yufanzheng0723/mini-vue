@@ -6,59 +6,64 @@ interface Options {
 }
 export function createRenderer(options: Options) {
   const { createElement, setElementText, insert, patchProps } = options;
+  function patch(n1, n2, container) {
+    if (n1 && n1.type !== n2.type) {
+      unmout(n1);
+      n1 = null;
+    }
+    const { type } = n2;
+    if (typeof type === "string") {
+      if (!n1) {
+        mountElement(n2, container);
+      }
+    }
+  }
 
-  // 处理dom属性
   function shouldSetAsProps(el, key, value) {
     if (key === "form" && el.tagName === "INPUT") return false;
     return key in el;
   }
 
-  function path(vnode1, vnode2, container: Element) {
-    // 如果 n1 不存在，意味着挂载， 则调用挂载函数完成挂载
-    if (!vnode1) {
-      mountElement(vnode2, container);
-    } else {
+  function mountElement(vnode, container) {
+    // 创建元素
+    const el = (vnode.el = createElement(vnode.type));
+
+    if (typeof vnode.children === "string") {
+      setElementText(el, vnode.children);
+    } else if (Array.isArray(vnode.children)) {
+      vnode.children.forEach((element) => {
+        patch(null, element, el);
+      });
     }
+    if (vnode.props) {
+      for (const key in vnode.props) {
+        patchProps(el, key, null, vnode.props[key], shouldSetAsProps);
+      }
+    }
+    insert(el, container);
+  }
+
+  function unmout(vnode) {
+    const parent = vnode.el.parentNode;
+    if (parent) parent.removeChild(vnode.el);
   }
 
   function render(vnode, container) {
     if (vnode) {
-      path(container._vnode, vnode, container);
+      patch(container?._vnode, vnode, container);
     } else {
       if (container._vnode) {
-        container.innerHTML = "";
+        unmout(container._vnode);
       }
     }
+    // 把vnode储存到container._vnode下，即后续渲染中的旧vnode
     container._vnode = vnode;
   }
 
   function hydrate(vnode, container) {}
 
-  function mountElement(vnode, container) {
-    // 创建dom
-    const el = createElement(vnode.tag);
-
-    if (vnode.props) {
-      // 处理属性
-      for (const key of vnode.props) {
-        patchProps(el, key, null, vnode.props[key], shouldSetAsProps);
-      }
-    }
-
-    // 处理子节点
-    if (typeof vnode.children === "string") {
-      setElementText(el, vnode.children);
-    } else if (Array.isArray(vnode.children)) {
-      vnode.children.forEach((child) => {
-        path(null, child, el);
-      });
-    }
-
-    // 插入到父节点
-    insert(el, container);
-  }
-
   return {
     render,
+    hydrate,
   };
 }

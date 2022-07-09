@@ -1,14 +1,15 @@
 // 解析参数
-const args = require("minimist")(process.argv.slice(2));
-const { resolve } = require("path");
-const { build } = require("esbuild");
+const args = require("minimist")(process.argv.slice(2))
+const { resolve } = require("path")
+const { build } = require("esbuild")
 
-const target = args[0] || "reactivity";
+const target = args["_"] || "render"
 
-const format = args.f || "global";
+const format = args.f || "global"
 
-const pkg = require(resolve(__dirname, `../packages/${target}/package.json`));
+const pkg = require(resolve(__dirname, `../packages/${target}/package.json`))
 
+console.log(args)
 /**
  * iife 立即实行函数
  * cjs node中的模块
@@ -18,12 +19,12 @@ const outpuFormat = format.startsWith("global")
   ? "iife"
   : format === "cjs"
   ? "cjs"
-  : "esm";
+  : "esm"
 
 const outfile = resolve(
   __dirname,
   `../packages/${target}/dist/${target}.${format}.js`
-);
+)
 
 build({
   entryPoints: [resolve(__dirname, `../packages/${target}/src/index.ts`)],
@@ -40,9 +41,9 @@ build({
   // 监控文件变化
   watch: {
     onRebuild(err) {
-      if (!err) console.log("------build-----");
+      if (!err) console.log("------build-----")
     },
   },
 }).then(() => {
-  console.log("ok");
-});
+  console.log("ok")
+})
