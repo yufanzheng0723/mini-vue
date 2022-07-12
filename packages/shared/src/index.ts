@@ -5,3 +5,7 @@ export function isObject(obj) {
 export function isFuncion(fn) {
   return typeof fn === "function"
 }
+
+export function isArray(arr) {
+  return Array.isArray(arr)
+}

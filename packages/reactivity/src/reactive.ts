@@ -1,30 +1,54 @@
 import { isObject } from "@mini-vue/shared"
-import { mutableHandle, ReactiveFlags } from "."
+import { mutableHandle, ReactiveFlags, readonlyHandle } from "."
 
-const reactiveMap = new WeakMap()
+export const reactiveMap = new WeakMap()
+export const readonlyMap = new WeakMap()
 
-export function reactive(obj) {
-  if (!isObject(obj)) {
-    return
+export function reactive(target: object) {
+  if (isReactive(target)) {
+    return target
+  }
+  return createReactiveObject(target, false, mutableHandle, reactiveMap)
+}
+
+export function readonly(target: object) {
+  return createReactiveObject(target, true, readonlyHandle, readonlyMap)
+}
+
+function createReactiveObject(
+  target,
+  isReadonly: boolean,
+  mutableHandlers,
+  proxyMap
+) {
+  if (!isObject(target)) {
+    return target
   }
 
-  // 是否为proxy对象，访问对象的get方法
-  if (obj[ReactiveFlags.IS_REACTIVE]) {
-    return obj
+  // 是否为proxy对象，或者是否是只读对象
+  if (
+    target[ReactiveFlags.RAW] &&
+    !(isReadonly && target[ReactiveFlags.IS_REACTIVE])
+  ) {
+    return target
   }
 
   // 如果已经缓存过了，就直接返回缓存的对象
-  const exisitingProxy = reactiveMap.get(obj)
+  const exisitingProxy = proxyMap.get(target)
   if (exisitingProxy) {
     return exisitingProxy
   }
 
-  const proxy = new Proxy(obj, mutableHandle)
+  const proxy = new Proxy(target, mutableHandlers)
   // 缓存proxy，防止重复代理
-  reactiveMap.set(obj, proxy)
+  proxyMap.set(target, proxy)
   return proxy
 }
 
 export function isReactive(obj) {
   return !!(obj && obj[ReactiveFlags.IS_REACTIVE])
+}
+
+export function isReadonly(obj) {
+  return !!(obj && obj[ReactiveFlags.IS_READONLY])
 }
