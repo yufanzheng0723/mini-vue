@@ -32,6 +32,19 @@ export class ReactiveEffct {
   }
 }
 
+let shouldTrack = true
+let trackStack = []
+
+export function pauseTracking() {
+  trackStack.push(shouldTrack)
+  shouldTrack = false
+}
+
+export function resetTracking() {
+  const last = trackStack.pop()
+  shouldTrack = last === undefined ? true : last
+}
+
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffct(fn, options.scheduler)
   // 默认先执行一次
@@ -45,7 +58,7 @@ export function effect(fn, options: any = {}) {
 
 const targetMap = new WeakMap()
 export function track(target, type, key) {
-  if (!activeEffect) return
+  if (!activeEffect && !shouldTrack) return
   // 第一次查找有没有
   let depsMap = targetMap.get(target)
   if (!depsMap) {

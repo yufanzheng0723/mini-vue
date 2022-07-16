@@ -52,3 +52,8 @@ export function isReactive(obj) {
 export function isReadonly(obj) {
   return !!(obj && obj[ReactiveFlags.IS_READONLY])
 }
+
+export function toRaw(observed) {
+  const raw = observed && observed[ReactiveFlags.RAW]
+  return raw ? toRaw(raw) : observed
+}

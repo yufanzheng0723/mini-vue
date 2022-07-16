@@ -1,0 +1,13 @@
+{
+  "name": "@mini-vue/runtime-dom",
+  "version": "1.0.0",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "runtimeDom",
+    "formats": [
+      "global",
+      "cjs",
+      "esm-bundler"
+    ]
+  }
+}
