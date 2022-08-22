@@ -1,5 +1,5 @@
 import { isArray, isString, ShapeFlags } from '@mini-vue/shared';
-export function createVnode(type, props, children) {
+export function createVnode(type, props, children = null) {
   let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
 
   const vnode = {
