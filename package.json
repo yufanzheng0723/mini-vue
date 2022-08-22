@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest packages/",
-    "dev": "node scripts/dev.js runtime-core -f global"
+    "dev": "node scripts/dev.js runtime-dom -f global"
   },
   "keywords": [],
   "author": "",
