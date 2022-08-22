@@ -1,6 +1,6 @@
 import { patchProp } from "./patchProp"
 import { nodeOptions } from "./nodeOptions"
-import { createRenderer } from "@mini-vue/render-core"
+import { createRenderer } from "@mini-vue/runtime-core"
 
 const renderOptions = Object.assign(nodeOptions, {
   patchProp,
